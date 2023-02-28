@@ -7,7 +7,7 @@ Goten is a tensor library written in Go with a neural network library built on t
 To install Goten, simply run:
 
 ```go
-go get github.com/conacts/goten
+go get github.com/conacts/goten@latest
 ```
 
 ## Usage
