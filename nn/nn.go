@@ -46,6 +46,10 @@ func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 	return out, nil
 }
 
+func (m *MLP) GetLayers() []*LinearLayer {
+	return m.layers
+}
+
 // Parameters returns a slice of all the parameters in the MLP
 func (m *MLP) GetParameters() []*engine.Tensor {
 	params := make([]*engine.Tensor, 0)
@@ -54,6 +58,30 @@ func (m *MLP) GetParameters() []*engine.Tensor {
 		params = append(params, l.b)
 	}
 	return params
+}
+
+func (m *MLP) Backward(dout *engine.Tensor) error {
+	// Iterate through the layers in reverse order
+	for i := len(m.layers) - 1; i >= 0; i-- {
+		// layer := m.layers[i]
+
+		// Backpropagate through the linear layer
+		dz, err := m.layers[i].Backward(dout)
+		if err != nil {
+			return fmt.Errorf("error in layer %d backward: %v", i+1, err)
+		}
+
+		// Set the output gradient to the input gradient of the previous layer
+		dout = dz
+	}
+
+	return nil
+}
+
+func (m *MLP) ZeroGrad() {
+	for _, layer := range m.layers {
+		layer.ZeroGrad()
+	}
 }
 
 func (m *MLP) String() string {
@@ -79,10 +107,23 @@ func (m *MLP) String() string {
 }
 
 type LinearLayer struct {
-	w    *engine.Tensor
-	b    *engine.Tensor
-	lin  int
-	lout int
+	w        *engine.Tensor
+	b        *engine.Tensor
+	lin      int
+	lout     int
+	intensor *engine.Tensor
+}
+
+func (l *LinearLayer) String() string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Linear layer: %d -> %d\n", l.lin, l.lout))
+	sb.WriteString(fmt.Sprintf("Weights:\n%v\n", l.w))
+	sb.WriteString(fmt.Sprintf("Weight Gradients:\n%v\n", l.w.GetWeightGrads()))
+	sb.WriteString(fmt.Sprintf("Biases:\n%v\n", l.b))
+	sb.WriteString(fmt.Sprintf("Bias Gradients:\n%v\n", l.b.GetBiasesGrads()))
+	sb.WriteString(fmt.Sprintf("Input:\n%v\n", l.intensor))
+	sb.WriteString(fmt.Sprintf("Input Gradient:\n%v\n", l.intensor.GetInputGrads()))
+	return sb.String()
 }
 
 func NewLinearLayer(lin, lout int) (*LinearLayer, error) {
@@ -97,10 +138,11 @@ func NewLinearLayer(lin, lout int) (*LinearLayer, error) {
 	}
 
 	return &LinearLayer{
-		w:    w,
-		b:    b,
-		lin:  lin,
-		lout: lout,
+		w:        w,
+		b:        b,
+		lin:      lin,
+		lout:     lout,
+		intensor: nil,
 	}, nil
 }
 
@@ -110,7 +152,7 @@ func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 		return nil, fmt.Errorf("input tensor has invalid shape, %v compared to %d", x.GetShape(), l.lin)
 	}
 
-	fmt.Printf("x: %v, l.w: %v, l.b %v\n", x.GetShape(), l.w.GetShape(), l.b.GetShape())
+	l.intensor = x
 	// Compute linear transformation
 	/*
 		wt, err := engine.Transpose(l.w)
@@ -136,6 +178,83 @@ func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 	return z, nil
 }
 
+func (l *LinearLayer) Backward(dout *engine.Tensor) (*engine.Tensor, error) {
+	// Check if the shape of input tensor is valid
+	if dout.GetShape()[1] != l.lout {
+		return nil, fmt.Errorf("invalid shape for input tensor, expected (%d, %d), got %v", dout.GetShape()[0], l.lout, dout.GetShape())
+	}
+
+	// Compute gradients of weights and biases
+	// Transpose input tensor
+	inputT, err := engine.Transpose(l.intensor)
+	if err != nil {
+		return nil, err
+	}
+	// Compute gradient of weights
+	dw, err := engine.Dot(inputT, dout)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save the gradients in the layer
+	// Create new Tensor for weight gradient and set it
+	weightGrads, err := engine.NewTensor(dw.GetData(), dw.GetShape())
+	if err != nil {
+		return nil, err
+	}
+	l.w.SetWeightGrads(weightGrads)
+
+	// Compute gradient of biases
+	// FIX SO BIASES CHANGE
+	zero, err := engine.NewZeroTensor(dout.GetShape())
+	if err != nil {
+		return nil, err
+	}
+	db, err := engine.Add(dout, zero)
+	if err != nil {
+		return nil, err
+	}
+	// Create new Tensor for bias gradient and set it
+	biasGrads, err := engine.NewTensor(db.GetData(), db.GetShape())
+	if err != nil {
+		return nil, err
+	}
+	l.b.SetBiasGrads(biasGrads)
+
+	// Propagate the gradient to the input
+	// Transpose weight tensor
+	weightT, err := engine.Transpose(l.w)
+	if err != nil {
+		return nil, err
+	}
+	// Compute gradient of input
+	doutWt, err := engine.Dot(dout, weightT)
+	if err != nil {
+		return nil, err
+	}
+	dout.SetWeightGrads(doutWt)
+
+	// Compute gradient of input
+	inputWt, err := engine.Transpose(l.w)
+	if err != nil {
+		return nil, err
+	}
+	dx, err := engine.Dot(dout, inputWt)
+	if err != nil {
+		return nil, err
+	}
+
+	return dx, nil
+}
+
+func (l *LinearLayer) ZeroGrad() {
+	w, _ := engine.NewZeroTensor(l.w.GetShape())
+	b, _ := engine.NewZeroTensor(l.b.GetShape())
+
+	l.w.SetWeightGrads(w)
+	l.b.SetBiasGrads(b)
+}
+
 func (ll *LinearLayer) GetWeights() *engine.Tensor {
 	return ll.w
 }
@@ -150,6 +269,10 @@ func (ll *LinearLayer) GetBiases() *engine.Tensor {
 
 func (ll *LinearLayer) SetBiases(b *engine.Tensor) {
 	ll.b = b
+}
+
+func (ll *LinearLayer) GetIntensor() *engine.Tensor {
+	return ll.intensor
 }
 
 func (l *LinearLayer) GetParameters() []*engine.Tensor {

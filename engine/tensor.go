@@ -11,10 +11,9 @@ import (
 type Tensor struct {
 	data  []float64 // The data stored in the tensor
 	shape []int     // The shape of the tensor, [row, col, ...]
-	grads struct {
-		dw *Tensor // Gradients of the weights
-		db *Tensor // Gradients of the biases
-	}
+	dw    *Tensor   // Gradients of the weights
+	db    *Tensor   // Gradients of the biases
+	dx    *Tensor   // Gradient of the tensor
 }
 
 func NewTensor(data []float64, shape []int) (*Tensor, error) {
@@ -31,10 +30,9 @@ func NewTensor(data []float64, shape []int) (*Tensor, error) {
 	t := &Tensor{
 		data:  data,
 		shape: shape,
-		grads: struct {
-			dw *Tensor
-			db *Tensor
-		}{},
+		dw:    nil,
+		db:    nil,
+		dx:    nil,
 	}
 	return t, nil
 }
@@ -221,12 +219,28 @@ func (t1 *Tensor) Equals(t2 *Tensor) bool {
 	return true
 }
 
-func (t *Tensor) GetWeights() *Tensor {
-	return t.grads.dw
+func (t *Tensor) GetWeightGrads() *Tensor {
+	return t.dw
 }
 
-func (t *Tensor) GetBiases() *Tensor {
-	return t.grads.db
+func (t *Tensor) SetWeightGrads(dw *Tensor) {
+	t.dw = dw
+}
+
+func (t *Tensor) GetBiasesGrads() *Tensor {
+	return t.db
+}
+
+func (t *Tensor) SetBiasGrads(db *Tensor) {
+	t.db = db
+}
+
+func (t *Tensor) GetInputGrads() *Tensor {
+	return t.dx
+}
+
+func (t *Tensor) SetInputGrads(dx *Tensor) {
+	t.dx = dx
 }
 
 // String returns a string representation of the tensor.
