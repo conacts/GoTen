@@ -148,6 +148,14 @@ func Relu(t *Tensor) (*Tensor, error) {
 	return NewTensor(data, t.shape)
 }
 
+func Sigmoid(t *Tensor) (*Tensor, error) {
+	data := make([]float64, len(t.data))
+	for i, v := range t.data {
+		data[i] = 1 / (1 + math.Exp(-v))
+	}
+	return NewTensor(data, t.shape)
+}
+
 // Square computes the element-wise square of the input tensor.
 func Square(t *Tensor) (*Tensor, error) {
 	if t == nil {
@@ -243,10 +251,15 @@ func Min(t *Tensor) (*Tensor, error) {
 
 func Neg(t *Tensor) (*Tensor, error) {
 	data := t.GetData()
+	outdata := make([]float64, len(data))
 	for i := 0; i < len(data); i++ {
-		data[i] = -data[i]
+		outdata[i] = -data[i]
 	}
-	return t, nil
+	out, err := NewTensor(outdata, t.GetShape())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create negated tensor in Neg(): %v", err)
+	}
+	return out, nil
 }
 
 // Sub subtracts tensor y from tensor x.
@@ -281,5 +294,29 @@ func Exp(t *Tensor) (*Tensor, error) {
 		out.data[i] = math.Exp(x)
 	}
 
+	return out, nil
+}
+
+func SumCols(t *Tensor) (*Tensor, error) {
+	shape := t.GetShape()
+	data := t.GetData()
+	if len(shape) < 2 {
+		return nil, fmt.Errorf("cannot sum columns of a tensor with less than 2 dimensions")
+	}
+	cols := shape[len(shape)-1]
+	rows := 1
+	if len(shape) > 2 {
+		rows = len(shape[:len(shape)-1])
+	}
+	colSums := make([]float64, cols)
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			colSums[j] += data[i*cols+j]
+		}
+	}
+	out, err := NewTensor(colSums, []int{1, cols})
+	if err != nil {
+		return nil, err
+	}
 	return out, nil
 }

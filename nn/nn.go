@@ -30,6 +30,7 @@ func NewMLP(layerSizes []int) (*MLP, error) {
 }
 
 // Forward runs the forward pass through the MLP
+/*
 func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 	out := x
 	var err error
@@ -38,7 +39,25 @@ func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to run forward pass through linear layer: %v", err)
 		}
-		out, err = engine.Relu(out)
+		out, err = engine.Sigmoid(out)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply ReLU activation: %v", err)
+		}
+	}
+	return out, nil
+}
+*/
+
+// Forward runs the forward pass through the MLP
+func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
+	out := x
+	var err error
+	for _, l := range m.layers {
+		out, err = l.Forward(out)
+		if err != nil {
+			return nil, fmt.Errorf("failed to run forward pass through linear layer: %v", err)
+		}
+		out, err = engine.Sigmoid(out)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply ReLU activation: %v", err)
 		}
@@ -146,6 +165,7 @@ func NewLinearLayer(lin, lout int) (*LinearLayer, error) {
 	}, nil
 }
 
+/*
 // Input should be of the shape [lin, lout]
 func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 	if x.GetShape()[1] != l.lin {
@@ -154,23 +174,46 @@ func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 
 	l.intensor = x
 	// Compute linear transformation
-	/*
 		wt, err := engine.Transpose(l.w)
 		if err != nil {
 			return nil, err
 		}
-	*/
 	z, err := engine.Dot(x, l.w)
 	if err != nil {
 		return nil, err
 	}
-	/*
 		bt, err := engine.Transpose(l.b)
 		if err != nil {
 			return nil, err
 		}
-	*/
 	z, err = engine.Add(z, l.b)
+	if err != nil {
+		return nil, err
+	}
+
+	return z, nil
+}
+*/
+
+// Input should be of the shape [batch, lin]
+func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
+	if x.GetShape()[1] != l.lin {
+		return nil, fmt.Errorf("input tensor has invalid shape, %v compared to %d", x.GetShape(), l.lin)
+	}
+
+	l.intensor = x
+	// Compute linear transformation
+	z, err := engine.Dot(x, l.w)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add biases to the linear transformation
+	b, err := engine.NewTensor(l.b.GetData(), []int{x.GetShape()[0], l.lout})
+	if err != nil {
+		return nil, err
+	}
+	z, err = engine.Add(z, b)
 	if err != nil {
 		return nil, err
 	}
@@ -205,17 +248,13 @@ func (l *LinearLayer) Backward(dout *engine.Tensor) (*engine.Tensor, error) {
 	l.w.SetWeightGrads(weightGrads)
 
 	// Compute gradient of biases
-	// FIX SO BIASES CHANGE
-	zero, err := engine.NewZeroTensor(dout.GetShape())
+	// Sum along axis 0 of dout to obtain the gradients for each example
+	db, err := engine.SumCols(dout)
 	if err != nil {
 		return nil, err
 	}
-	db, err := engine.Add(dout, zero)
-	if err != nil {
-		return nil, err
-	}
-	// Create new Tensor for bias gradient and set it
-	biasGrads, err := engine.NewTensor(db.GetData(), db.GetShape())
+	// Reshape bias gradient tensor to match the shape of the bias tensor
+	biasGrads, err := engine.NewTensor(db.GetData(), []int{1, db.GetShape()[0]})
 	if err != nil {
 		return nil, err
 	}
@@ -232,19 +271,9 @@ func (l *LinearLayer) Backward(dout *engine.Tensor) (*engine.Tensor, error) {
 	if err != nil {
 		return nil, err
 	}
-	dout.SetWeightGrads(doutWt)
+	doutWt.SetWeightGrads(dout)
 
-	// Compute gradient of input
-	inputWt, err := engine.Transpose(l.w)
-	if err != nil {
-		return nil, err
-	}
-	dx, err := engine.Dot(dout, inputWt)
-	if err != nil {
-		return nil, err
-	}
-
-	return dx, nil
+	return doutWt, nil
 }
 
 func (l *LinearLayer) ZeroGrad() {
