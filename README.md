@@ -39,6 +39,13 @@ func main() {
 }
 ```
 
+## Test Package
+```sh
+git clone https://github.com/conacts/goten
+cd goten
+go run .
+```
+
 ## Contributing
 
 If you would like to contribute to goten, please open an issue or a pull request on the GitHub repository.
