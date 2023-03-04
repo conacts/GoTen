@@ -1,4 +1,6 @@
-<img src="./assets/goten.webp">
+<div style="text-align: center;">
+    <img src="./assets/goten.webp" style="width: 100px; height: auto;">
+</div>
 
 # Goten
 
