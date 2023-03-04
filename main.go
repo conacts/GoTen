@@ -17,6 +17,7 @@ func main() {
 		log.Fatalf("Failed to create new MLP: %v", err)
 	}
 	loss := nn.NewLoss(nn.LogLoss, nn.Backward)
+
 	optimizer := nn.NewSGD(net.GetParameters(), lr)
 
 	X, err := dataloader.LoadData("./data/xs.csv")
@@ -43,6 +44,10 @@ func main() {
 		net.ZeroGrad()
 		for j := 0; j < len(Xs); j++ {
 			out, err := net.Forward(Xs[j])
+			if err != nil {
+				log.Fatalf("Forward pass failed: %v", err)
+			}
+			out, err = engine.Sigmoid(out)
 			if err != nil {
 				log.Fatalf("Forward pass failed: %v", err)
 			}

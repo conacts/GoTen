@@ -57,7 +57,7 @@ func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to run forward pass through linear layer: %v", err)
 		}
-		out, err = engine.Sigmoid(out)
+		out, err = engine.Relu(out)
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply ReLU activation: %v", err)
 		}
