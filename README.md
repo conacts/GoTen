@@ -53,8 +53,3 @@ go run .
 ## Contributing
 
 If you would like to contribute to goten, please open an issue or a pull request on the GitHub repository.
-
-## To Do
-
-1. Finish testing for new functions
-2. Implement proper backpropogation algorithms for Loss and Layers
