@@ -32,7 +32,7 @@ func TestCreateLinearLayer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := nn.NewLinearLayer(tt.lin, tt.lout)
+			got, err := nn.NewLinearLayer(tt.lin, tt.lout, engine.Relu)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreAteLinearLayer() error = %v, wantErr %v", err, tt.wantErr)
@@ -60,7 +60,7 @@ func TestCreateLinearLayer(t *testing.T) {
 
 func TestLinearLayer_GetSetWeights(t *testing.T) {
 	lin, lout := 3, 2
-	ll, err := nn.NewLinearLayer(lin, lout)
+	ll, err := nn.NewLinearLayer(lin, lout, engine.Relu)
 	if err != nil {
 		t.Errorf("Error creating LinearLayer: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestLinearLayer_GetSetWeights(t *testing.T) {
 
 func TestLinearLayer_GetSetBiases(t *testing.T) {
 	lin, lout := 3, 2
-	ll, err := nn.NewLinearLayer(lin, lout)
+	ll, err := nn.NewLinearLayer(lin, lout, engine.Relu)
 	if err != nil {
 		t.Errorf("Error creating LinearLayer: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestLinearLayer_GetSetBiases(t *testing.T) {
 // WRITE FOR REAL PREDICTED OUTPUT
 func TestLinearLayer_Forward(t *testing.T) {
 	lin, lout := 3, 2
-	ll, err := nn.NewLinearLayer(lin, lout)
+	ll, err := nn.NewLinearLayer(lin, lout, engine.Relu)
 	if err != nil {
 		t.Fatalf("failed to create linear layer: %v", err)
 	}
@@ -144,7 +144,7 @@ func TestLinearLayer_Forward(t *testing.T) {
 
 	rand.Seed(1)
 	tens, _ := engine.NewRandomTensor([]int{2, 1})
-	l, _ := nn.NewLinearLayer(2, 2)
+	l, _ := nn.NewLinearLayer(2, 2, engine.Relu)
 	v, _ := l.Forward(tens)
 	expectedout, _ := engine.NewTensor([]float64{-0.932625821077598, -0.38384784914080966}, []int{2, 1})
 	if !reflect.DeepEqual(expectedout, v) {

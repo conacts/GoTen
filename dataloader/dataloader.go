@@ -3,6 +3,7 @@ package dataloader
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -48,8 +49,7 @@ func EncodeCSVToTensorList(csv [][]string) ([]*engine.Tensor, error) {
 	return out, nil
 }
 
-/*
-func EncodeCSVToTensorList(csv [][]string, batchSize int) ([][]*engine.Tensor, error) {
+func EncodeCSVToTensorBatch(csv [][]string, batchSize int) ([][]*engine.Tensor, error) {
 	rows, cols := len(csv), len(csv[0])
 	numBatches := int(math.Ceil(float64(rows) / float64(batchSize)))
 	out := make([][]*engine.Tensor, numBatches)
@@ -79,4 +79,3 @@ func EncodeCSVToTensorList(csv [][]string, batchSize int) ([][]*engine.Tensor, e
 	}
 	return out, nil
 }
-*/

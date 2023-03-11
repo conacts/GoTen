@@ -8,10 +8,11 @@ import (
 )
 
 type MLP struct {
-	layers []*LinearLayer
+	layers  []*LinearLayer
+	Forward func(x *engine.Tensor) (*engine.Tensor, error)
 }
 
-func NewMLP(layerSizes []int) (*MLP, error) {
+func NewAutoMLP(layerSizes []int) (*MLP, error) {
 	if len(layerSizes) < 2 {
 		return nil, fmt.Errorf("invalid number of layer sizes")
 	}
@@ -19,14 +20,24 @@ func NewMLP(layerSizes []int) (*MLP, error) {
 	// create linear layers
 	layers := make([]*LinearLayer, len(layerSizes)-1)
 	for i := 0; i < len(layerSizes)-1; i++ {
-		ll, err := NewLinearLayer(layerSizes[i], layerSizes[i+1])
+		ll, err := NewLinearLayer(layerSizes[i], layerSizes[i+1], engine.Relu)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create linear layer: %v", err)
 		}
 		layers[i] = ll
 	}
 
-	return &MLP{layers}, nil
+	return &MLP{
+		layers:  layers,
+		Forward: nil,
+	}, nil
+}
+
+func NewMLP(layers []*LinearLayer, Forward func(x *engine.Tensor) (*engine.Tensor, error)) *MLP {
+	return &MLP{
+		layers:  layers,
+		Forward: Forward,
+	}
 }
 
 // Forward runs the forward pass through the MLP
@@ -49,7 +60,7 @@ func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 */
 
 // Forward runs the forward pass through the MLP
-func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
+func (m *MLP) ForwardAuto(x *engine.Tensor) (*engine.Tensor, error) {
 	out := x
 	var err error
 	for _, l := range m.layers {
@@ -57,16 +68,22 @@ func (m *MLP) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to run forward pass through linear layer: %v", err)
 		}
-		out, err = engine.Relu(out)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply ReLU activation: %v", err)
-		}
+		/*
+			out, err = engine.Relu(out)
+			if err != nil {
+				return nil, fmt.Errorf("failed to apply ReLU activation: %v", err)
+			}
+		*/
 	}
 	return out, nil
 }
 
 func (m *MLP) GetLayers() []*LinearLayer {
 	return m.layers
+}
+
+func (m *MLP) SetLayers(layers []*LinearLayer) {
+	m.layers = layers
 }
 
 // Parameters returns a slice of all the parameters in the MLP
@@ -131,6 +148,7 @@ type LinearLayer struct {
 	lin      int
 	lout     int
 	intensor *engine.Tensor
+	act      func(t *engine.Tensor) (*engine.Tensor, error)
 }
 
 func (l *LinearLayer) String() string {
@@ -145,7 +163,7 @@ func (l *LinearLayer) String() string {
 	return sb.String()
 }
 
-func NewLinearLayer(lin, lout int) (*LinearLayer, error) {
+func NewLinearLayer(lin, lout int, act func(t *engine.Tensor) (*engine.Tensor, error)) (*LinearLayer, error) {
 	w, err1 := engine.NewRandomTensor([]int{lin, lout})
 	if err1 != nil {
 		return nil, fmt.Errorf("failed to create weight tensor: %v", err1)
@@ -162,38 +180,9 @@ func NewLinearLayer(lin, lout int) (*LinearLayer, error) {
 		lin:      lin,
 		lout:     lout,
 		intensor: nil,
+		act:      act,
 	}, nil
 }
-
-/*
-// Input should be of the shape [lin, lout]
-func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
-	if x.GetShape()[1] != l.lin {
-		return nil, fmt.Errorf("input tensor has invalid shape, %v compared to %d", x.GetShape(), l.lin)
-	}
-
-	l.intensor = x
-	// Compute linear transformation
-		wt, err := engine.Transpose(l.w)
-		if err != nil {
-			return nil, err
-		}
-	z, err := engine.Dot(x, l.w)
-	if err != nil {
-		return nil, err
-	}
-		bt, err := engine.Transpose(l.b)
-		if err != nil {
-			return nil, err
-		}
-	z, err = engine.Add(z, l.b)
-	if err != nil {
-		return nil, err
-	}
-
-	return z, nil
-}
-*/
 
 // Input should be of the shape [batch, lin]
 func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
@@ -218,7 +207,12 @@ func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 		return nil, err
 	}
 
-	return z, nil
+	out, err := l.act(z)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply activation function: %v", err)
+	}
+
+	return out, nil
 }
 
 func (l *LinearLayer) Backward(dout *engine.Tensor) (*engine.Tensor, error) {
