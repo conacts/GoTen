@@ -66,16 +66,16 @@ func main() {
 			totaloutloss, _ = engine.Add(totaloutloss, outloss)
 
 			// Backward pass
-			dout, err := loss.Backward(out, Ys[j])
+            dout, err := loss.Backward(out, Ys[j])
 			if err != nil {
 				log.Fatalf("Backward pass failed: %v", err)
 			}
-			net.Backward(dout)
+            net.Backward(dout)
+            optimizer.Step()
 		}
 		if (i+1)%100 == 0 {
 			fmt.Printf("Epoch: %d, accuracy: %.1f%%  loss: %.4f\n", i+1, accuracy, totaloutloss.GetData()[0]/float64(len(Xs)))
 		}
-		optimizer.Step()
 		totaloutloss.SetData([]float64{0})
 	}
 }
