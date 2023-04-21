@@ -4,7 +4,7 @@
 
 # Goten
 
-Goten is a tensor library written in Go with a neural network library built on top. It is designed to be easy to use, performant, and suitable for a variety of machine learning and scientific computing tasks.
+Goten is a tensor library written in Go with a neural network library built on top. It was just for fun and to learn
 
 ## Installation
 
