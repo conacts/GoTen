@@ -1,0 +1,6 @@
+github.com/conacts/goten/dataloader v0.0.0-20230705205342-09031710e13a h1:l1VXezzdUqDEmTjymMRZrF9pJodHaBNIfOkYGjCPkgk=
+github.com/conacts/goten/dataloader v0.0.0-20230705205342-09031710e13a/go.mod h1:1HKj/Q9DztVpDo0DCWYc1gTlyfeB+tvOqNBADf3J8XI=
+github.com/conacts/goten/engine v0.0.0-20230705205342-09031710e13a h1:/7IAd2WG7t+SYTFWK10QkZKugbMCFiLFW0d+ZGHJ/mw=
+github.com/conacts/goten/engine v0.0.0-20230705205342-09031710e13a/go.mod h1:TmQxcvtGDIEZuh4NwxZsN992juQSB2okKQaaJfqiTbo=
+github.com/conacts/goten/nn v0.0.0-20230705205342-09031710e13a h1:jufDTZR50T+zsKCOnL4GwOe23TW/mVWDR0xniPLRuY8=
+github.com/conacts/goten/nn v0.0.0-20230705205342-09031710e13a/go.mod h1:EqgOdNYc7nVOSItMAjUFfTBDwEBwgb5Yd/+livsXP64=
