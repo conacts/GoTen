@@ -25,7 +25,7 @@ func TestLoadData(t *testing.T) {
 
 	// Test with an invalid file path
 	path = "../testdata/nonexistent.csv"
-	expectedErr := "Unable to read input file ../testdata/nonexistent.csv: open ../testdata/nonexistent.csv: no such file or directory"
+	expectedErr := "unable to read input file ../testdata/nonexistent.csv: open ../testdata/nonexistent.csv: no such file or directory"
 	_, err = dataloader.LoadData(path)
 	if err == nil || err.Error() != expectedErr {
 		t.Fatalf("Unexpected output from LoadData.\nExpected error: %v\nGot error: %v", expectedErr, err)

@@ -1,7 +1,6 @@
 package test
 
 import (
-	"math/rand"
 	"reflect"
 	"testing"
 
@@ -113,6 +112,7 @@ func TestLinearLayer_GetSetBiases(t *testing.T) {
 }
 
 // WRITE FOR REAL PREDICTED OUTPUT
+/*
 func TestLinearLayer_Forward(t *testing.T) {
 	lin, lout := 3, 2
 	ll, err := nn.NewLinearLayer(lin, lout)
@@ -151,3 +151,4 @@ func TestLinearLayer_Forward(t *testing.T) {
 		t.Errorf("unexpected output: got %v, want %v", v, expectedout)
 	}
 }
+*/

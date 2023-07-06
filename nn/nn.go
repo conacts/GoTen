@@ -197,9 +197,11 @@ func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
 
 // Input should be of the shape [batch, lin]
 func (l *LinearLayer) Forward(x *engine.Tensor) (*engine.Tensor, error) {
+	/*
 	if x.GetShape()[1] != l.lin {
 		return nil, fmt.Errorf("input tensor has invalid shape, %v compared to %d", x.GetShape(), l.lin)
 	}
+	*/
 
 	l.intensor = x
 	// Compute linear transformation

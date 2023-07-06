@@ -15,11 +15,11 @@ func Flatten(t *Tensor) (*Tensor, error) {
 	}
 	data := t.GetData()
 	if data == nil {
-		return nil, fmt.Errorf("tensor data is nil")
+		return nil, fmt.Errorf("cannot flatten tensor with nil data")
 	}
 	shape := t.GetShape()
 	if shape == nil {
-		return nil, fmt.Errorf("tensor shape is nil")
+		return nil, fmt.Errorf("cannot flatten tensor with nil shape")
 	}
 	return NewTensor(data, []int{len(data), 1})
 }
@@ -81,6 +81,7 @@ func Mul(t1, t2 *Tensor) (*Tensor, error) {
 }
 
 // Dot returns a new tensor that is the matrix product of t1 and t2.
+// This is not a dot product...
 func Dot(t1, t2 *Tensor) (*Tensor, error) {
 	// Check that the input tensors have compatible shapes
 	if len(t1.GetShape()) != 2 || len(t2.GetShape()) != 2 || t1.GetShape()[1] != t2.GetShape()[0] {
