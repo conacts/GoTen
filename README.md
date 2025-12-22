@@ -6,6 +6,8 @@
 
 Goten is a tensor library written in Go with a neural network library built on top. It was just for fun.
 
+Note: This project has a ton of bugs and was built using gpt-3.5 just to test things out for fun
+
 ## Installation
 
 To install Goten, simply run:
